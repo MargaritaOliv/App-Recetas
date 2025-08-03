@@ -6,7 +6,7 @@ import com.example.app.domain.repository.HomeRepository
 class HomeUseCase(
     private val repository: HomeRepository
 ) {
-    suspend fun getRecetas(token: String): Result<List<HomeUser>> {
-        return repository.getRecetas(token)
+    suspend fun getRecetas(): Result<List<HomeUser>> {
+        return repository.getRecetas()
     }
 }

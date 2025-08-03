@@ -9,9 +9,9 @@ class HomeRepositoryImpl(
     private val apiService: HomeApiService
 ) : HomeRepository {
 
-    override suspend fun getRecetas(token: String): Result<List<HomeUser>> {
+    override suspend fun getRecetas(): Result<List<HomeUser>> {
         return try {
-            val response = apiService.getRecetas("Bearer $token")
+            val response = apiService.getRecetas()
             if (response.isSuccessful) {
                 val recetas = response.body()?.map { it.toDomainModel() } ?: emptyList()
                 Result.success(recetas)
@@ -29,7 +29,8 @@ class HomeRepositoryImpl(
             nombre = this.nombre,
             ingredientes = this.ingredientes,
             pasos = this.pasos,
-            tiempoPreparacion = this.tiempoPreparacion
+            tiempoPreparacion = this.tiempoPreparacion,
+            imagenReceta = this.imagenReceta
         )
     }
 }

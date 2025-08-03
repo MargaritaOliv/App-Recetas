@@ -5,47 +5,29 @@ import com.example.app.data.repository.HomeRepositoryImpl
 import com.example.app.domain.repository.HomeRepository
 import com.example.app.domain.usecase.HomeUseCase
 import com.example.app.presentation.viewModel.HomeViewModelFactory
-import okhttp3.OkHttpClient
-import okhttp3.logging.HttpLoggingInterceptor
-import retrofit2.Retrofit
-import retrofit2.converter.gson.GsonConverterFactory
-import java.util.concurrent.TimeUnit
+import com.example.app_recetas.src.Core.Http.RetrofitHelper
 
 object AppNetwork {
 
-    private fun provideOkHttpClient(): OkHttpClient {
-        val loggingInterceptor = HttpLoggingInterceptor().apply {
-            level = HttpLoggingInterceptor.Level.BODY
-        }
-
-        return OkHttpClient.Builder()
-            .addInterceptor(loggingInterceptor)
-            .connectTimeout(30, TimeUnit.SECONDS)
-            .readTimeout(30, TimeUnit.SECONDS)
-            .writeTimeout(30, TimeUnit.SECONDS)
-            .build()
-    }
-
-    private fun provideRetrofit(): Retrofit {
-        return Retrofit.Builder()
-            .baseUrl("https://api-recetas.margaritaydidi.xyz/")
-            .client(provideOkHttpClient())
-            .addConverterFactory(GsonConverterFactory.create())
-            .build()
-    }
-
+    // Proveer API Service
     private fun provideHomeApiService(): HomeApiService {
-        return provideRetrofit().create(HomeApiService::class.java)
+        return RetrofitHelper.getService(HomeApiService::class.java)
     }
 
+    // Proveer Repository con DI - SOLO dependencias de dominio
     private fun provideHomeRepository(): HomeRepository {
-        return HomeRepositoryImpl(provideHomeApiService())
+        return HomeRepositoryImpl(
+            apiService = provideHomeApiService()
+            // ⬅️ Sin DataStoreManager - el interceptor maneja la autenticación
+        )
     }
 
+    // Proveer UseCase
     private fun provideHomeUseCase(): HomeUseCase {
         return HomeUseCase(provideHomeRepository())
     }
 
+    // Proveer ViewModelFactory
     fun provideHomeViewModelFactory(): HomeViewModelFactory {
         return HomeViewModelFactory(provideHomeUseCase())
     }

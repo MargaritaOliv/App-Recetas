@@ -10,16 +10,29 @@ class RecetaViewModelFactory : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         return when {
             modelClass.isAssignableFrom(RecetasViewModel::class.java) -> {
+                // ✅ USAR LAS FUNCIONES PROVIDE EXISTENTES
                 AppNetwork.provideRecetasViewModel() as T
             }
             modelClass.isAssignableFrom(RecetasListViewModel::class.java) -> {
-                AppNetwork.provideRecetasListViewModel() as T
+                RecetasListViewModel(
+                    getAllRecetasUseCase = AppNetwork.getAllRecetasUseCase,
+                    deleteRecetaUseCase = AppNetwork.deleteRecetaUseCase,
+                    connectivityRepository = AppNetwork.provideConnectivityRepository()
+                ) as T
             }
             modelClass.isAssignableFrom(RecetaDetailViewModel::class.java) -> {
-                AppNetwork.provideRecetaDetailViewModel() as T
+                RecetaDetailViewModel(
+                    getRecetaUseCase = AppNetwork.getRecetaUseCase,
+                    deleteRecetaUseCase = AppNetwork.deleteRecetaUseCase,
+                    connectivityRepository = AppNetwork.provideConnectivityRepository()
+                ) as T
             }
             modelClass.isAssignableFrom(RecetaEditViewModel::class.java) -> {
-                AppNetwork.provideRecetaEditViewModel() as T
+                RecetaEditViewModel(
+                    getRecetaUseCase = AppNetwork.getRecetaUseCase,
+                    updateRecetaUseCase = AppNetwork.updateRecetaUseCase,
+                    connectivityRepository = AppNetwork.provideConnectivityRepository()
+                ) as T
             }
             else -> throw IllegalArgumentException("Unknown ViewModel class: ${modelClass.name}")
         }

@@ -16,19 +16,31 @@ class HomeViewModel(
     private val _uiState = MutableStateFlow<HomeUiState>(HomeUiState.Loading)
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
 
-    fun getRecetas(token: String) {
+    init {
+        loadRecetas()
+    }
+
+    fun loadRecetas() {
         viewModelScope.launch {
             _uiState.value = HomeUiState.Loading
 
-            homeUseCase.getRecetas(token)
-                .onSuccess { recetas ->
-                    _uiState.value = HomeUiState.Success(recetas)
-                }
-                .onFailure { exception ->
-                    _uiState.value = HomeUiState.Error(
-                        exception.message ?: "Error desconocido"
-                    )
-                }
+            try {
+                homeUseCase.getRecetas()
+                    .onSuccess { recetas ->
+                        _uiState.value = HomeUiState.Success(recetas)
+                    }
+                    .onFailure { exception ->
+                        _uiState.value = HomeUiState.Error(
+                            exception.message ?: "Error desconocido"
+                        )
+                    }
+            } catch (e: Exception) {
+                _uiState.value = HomeUiState.Error("Error al obtener datos: ${e.message}")
+            }
         }
+    }
+
+    fun retry() {
+        loadRecetas()
     }
 }

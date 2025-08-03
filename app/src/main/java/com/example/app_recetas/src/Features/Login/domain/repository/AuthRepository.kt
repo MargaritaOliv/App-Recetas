@@ -4,5 +4,5 @@ interface AuthRepository {
     suspend fun login(
         correo: String,
         contrasena: String
-    ): Result<Pair<String, String>> // Pair<Token, Mensaje>
+    ): Result<Pair<String, String>>
 }
