@@ -13,7 +13,8 @@ class CreateRecetaUseCase(
         nombre: String,
         ingredientes: List<String>,
         pasos: List<String>,
-        tiempoPreparacion: Int
+        tiempoPreparacion: Int,
+        imagenPath: String? = null // ✅ Agregamos el parámetro
     ): RecetasResult<Recetas> {
 
         if (token.isBlank()) {
@@ -40,9 +41,10 @@ class CreateRecetaUseCase(
             nombre = nombre,
             ingredientes = ingredientes,
             pasos = pasos,
-            tiempoPreparacion = tiempoPreparacion
+            tiempoPreparacion = tiempoPreparacion,
+            imagenReceta = imagenPath // ✅ Pasamos la imagen al modelo
         )
 
-        return repository.crearReceta(token, receta)
+        return repository.crearReceta(receta)
     }
 }

@@ -1,9 +1,14 @@
 package com.example.app_recetas.src.Features.Recetas.presentation.view
 
+import android.Manifest
+import android.content.pm.PackageManager
 import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
@@ -11,25 +16,34 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.List
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import coil.compose.AsyncImage
+import coil.request.ImageRequest
 import com.example.app_recetas.src.Features.Recetas.presentation.viewModel.RecetasViewModel
 import com.example.app_recetas.src.Features.Recetas.presentation.viewModel.RecetaViewModelFactory
+import java.io.File
 
-// Colores pastel lila y celeste
+
 private val PastelLilac = Color(0xFFB39DDB)
 private val PastelBlue = Color(0xFF90CAF9)
 private val SoftPurple = Color(0xFFCE93D8)
@@ -39,20 +53,48 @@ private val LightLavender = Color(0xFFF3E5F5)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RecetaCreateScreen(
-    userToken: String, // Ya no opcional - requerido
     onNavigateBack: () -> Unit = {},
     onRecetaCreated: () -> Unit = {},
-    viewModel: RecetasViewModel = viewModel(factory = RecetaViewModelFactory()) // Usa el factory
+    viewModel: RecetasViewModel = viewModel(factory = RecetaViewModelFactory())
 ) {
     val context = LocalContext.current
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
 
     var nombre by remember { mutableStateOf("") }
     var ingredientes by remember { mutableStateOf("") }
     var pasos by remember { mutableStateOf("") }
     var tiempoPreparacion by remember { mutableStateOf("") }
 
-    // Observar cambios en el estado
+
+    var imagenPath by remember { mutableStateOf<String?>(null) }
+    var showCamera by remember { mutableStateOf(false) }
+
+
+    var hasCameraPermission by remember {
+        mutableStateOf(
+            ContextCompat.checkSelfPermission(
+                context, Manifest.permission.CAMERA
+            ) == PackageManager.PERMISSION_GRANTED
+        )
+    }
+
+    val cameraPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        hasCameraPermission = isGranted
+        if (isGranted) {
+            showCamera = true
+        } else {
+            Toast.makeText(
+                context,
+                "Permiso de cámara necesario para tomar fotos de las recetas",
+                Toast.LENGTH_LONG
+            ).show()
+        }
+    }
+
+
     LaunchedEffect(uiState.isSuccess) {
         if (uiState.isSuccess) {
             Toast.makeText(
@@ -105,7 +147,7 @@ fun RecetaCreateScreen(
                 .padding(paddingValues)
                 .verticalScroll(rememberScrollState())
         ) {
-            // Header
+
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -115,17 +157,31 @@ fun RecetaCreateScreen(
                     )
                     .padding(24.dp)
             ) {
-                // Header vacío para mantener el espacio
+
             }
 
-            // Form Content
+
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(20.dp),
                 verticalArrangement = Arrangement.spacedBy(20.dp)
             ) {
-                // Nombre de la receta
+
+
+                ImageSection(
+                    imagenPath = imagenPath,
+                    onTakePhoto = {
+                        if (hasCameraPermission) {
+                            showCamera = true
+                        } else {
+                            cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
+                        }
+                    },
+                    onRemovePhoto = { imagenPath = null }
+                )
+
+
                 CustomTextField(
                     value = nombre,
                     onValueChange = { nombre = it },
@@ -134,7 +190,7 @@ fun RecetaCreateScreen(
                     placeholder = "Ej: Pasta con champiñones"
                 )
 
-                // Ingredientes
+
                 CustomTextField(
                     value = ingredientes,
                     onValueChange = { ingredientes = it },
@@ -145,7 +201,7 @@ fun RecetaCreateScreen(
                     minLines = 4
                 )
 
-                // Pasos
+
                 CustomTextField(
                     value = pasos,
                     onValueChange = { pasos = it },
@@ -156,7 +212,7 @@ fun RecetaCreateScreen(
                     minLines = 4
                 )
 
-                // Tiempo de preparación
+
                 CustomTextField(
                     value = tiempoPreparacion,
                     onValueChange = { tiempoPreparacion = it },
@@ -169,10 +225,10 @@ fun RecetaCreateScreen(
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                // Botón guardar
+
                 Button(
                     onClick = {
-                        // Validación básica
+
                         if (nombre.isBlank()) {
                             Toast.makeText(context, "El nombre es obligatorio", Toast.LENGTH_SHORT).show()
                             return@Button
@@ -192,12 +248,13 @@ fun RecetaCreateScreen(
                         val pasosList = pasos.split("\n").filter { it.isNotBlank() }
                         val tiempo = tiempoPreparacion.toIntOrNull() ?: 0
 
+
                         viewModel.crearReceta(
-                            token = userToken,
                             nombre = nombre,
                             ingredientes = ingredientesList,
                             pasos = pasosList,
-                            tiempoPreparacion = tiempo
+                            tiempoPreparacion = tiempo,
+                            imagenPath = imagenPath
                         )
                     },
                     modifier = Modifier
@@ -234,11 +291,148 @@ fun RecetaCreateScreen(
             }
         }
     }
+
+
+    if (showCamera) {
+        Dialog(
+            onDismissRequest = { showCamera = false },
+            properties = DialogProperties(
+                usePlatformDefaultWidth = false,
+                dismissOnBackPress = true,
+                dismissOnClickOutside = false
+            )
+        ) {
+            Camara(
+                onPhotoTaken = { path ->
+                    imagenPath = path
+                    showCamera = false
+                    Toast.makeText(context, "Foto capturada exitosamente", Toast.LENGTH_SHORT).show()
+                },
+                onDismiss = { showCamera = false },
+                enableCompression = true,
+                compressionQuality = 80
+            )
+        }
+    }
 }
+
+@Composable
+private fun ImageSection(
+    imagenPath: String?,
+    onTakePhoto: () -> Unit,
+    onRemovePhoto: () -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = Color.White
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp)
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.padding(bottom = 8.dp)
+            ) {
+                Text(
+                    text = "📷",
+                    fontSize = 20.sp,
+                    color = PastelLilac
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = "Imagen de la receta",
+                    style = MaterialTheme.typography.labelLarge,
+                    color = PastelLilac,
+                    fontWeight = FontWeight.SemiBold
+                )
+            }
+
+            if (imagenPath != null) {
+
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(200.dp)
+                ) {
+                    AsyncImage(
+                        model = ImageRequest.Builder(LocalContext.current)
+                            .data(File(imagenPath))
+                            .crossfade(true)
+                            .build(),
+                        contentDescription = "Imagen de la receta",
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .clip(RoundedCornerShape(12.dp)),
+                        contentScale = ContentScale.Crop
+                    )
+
+
+                    IconButton(
+                        onClick = onRemovePhoto,
+                        modifier = Modifier
+                            .align(Alignment.TopEnd)
+                            .padding(8.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Delete,
+                            contentDescription = "Eliminar imagen",
+                            tint = Color.White,
+                            modifier = Modifier
+                                .background(
+                                    Color.Red.copy(alpha = 0.7f),
+                                    CircleShape
+                                )
+                                .padding(8.dp)
+                                .size(20.dp)
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+
+
+                OutlinedButton(
+                    onClick = onTakePhoto,
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        contentColor = PastelLilac
+                    )
+                ) {
+                    Text("➕", fontSize = 20.sp)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("📷 Tomar nueva foto")
+                }
+            } else {
+
+                OutlinedButton(
+                    onClick = onTakePhoto,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(60.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        contentColor = PastelLilac
+                    )
+                ) {
+                    Text("➕", fontSize = 24.sp)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("📷 Tomar foto de la receta")
+                }
+            }
+        }
+    }
+}
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun CustomTextField(
+fun CustomTextField(
     value: String,
     onValueChange: (String) -> Unit,
     label: String,

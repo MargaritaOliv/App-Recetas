@@ -17,6 +17,6 @@ class GetRecetaUseCase(
             return RecetasResult.Error(RecetasError.ValidationError("ID de receta inválido"))
         }
 
-        return repository.obtenerReceta(token, recetaId)
+        return repository.obtenerReceta(recetaId)
     }
 }

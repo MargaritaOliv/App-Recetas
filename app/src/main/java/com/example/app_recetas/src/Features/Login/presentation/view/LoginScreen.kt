@@ -1,5 +1,10 @@
 package com.example.app_recetas.src.Features.Login.presentation.view
 
+import android.Manifest
+import android.content.pm.PackageManager
+import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
@@ -15,11 +20,13 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
@@ -39,15 +46,45 @@ private val TextPrimary = Color.Black
 fun LoginScreen(
     onNavigateBack: () -> Unit = {},
     onNavigateToRegister: () -> Unit = {},
-    onLoginSuccess: (String) -> Unit = {},
-    loginViewModel: LoginViewModel = viewModel(
-        factory = LoginViewModelFactory(AppNetwork.provideLoginUseCase())
-    )
+    onLoginSuccess: (String) -> Unit = {}
 ) {
+    val context = LocalContext.current
+
+    val permissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) {
+            println("✅ [LOGIN] Usuario aceptó permiso de notificaciones")
+        } else {
+            println("❌ [LOGIN] Usuario rechazó permiso de notificaciones")
+        }
+    }
+
+    // ✅ Función simple para pedir permiso
+    fun requestNotificationPermission() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(
+                    context,
+                    Manifest.permission.POST_NOTIFICATIONS
+                ) != PackageManager.PERMISSION_GRANTED
+            ) {
+                permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+            }
+        }
+    }
+
+    // ✅ CAMBIO: Usar el patrón de DataStore implementado
+    val factory: LoginViewModelFactory = remember {
+        AppNetwork.loginViewModelFactory
+    }
+    val loginViewModel: LoginViewModel = viewModel(factory = factory)
+
     val uiState by loginViewModel.uiState.collectAsStateWithLifecycle()
 
     LaunchedEffect(uiState.isSuccess) {
         if (uiState.isSuccess && uiState.token != null) {
+            // ✅ Pedir permisos cuando el login sea exitoso
+            requestNotificationPermission()
             onLoginSuccess(uiState.token!!)
             loginViewModel.resetSuccess()
         }

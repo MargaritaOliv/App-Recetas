@@ -37,19 +37,18 @@ private val LightLavender = Color(0xFFF3E5F5)
 @Composable
 fun RecetaDetailScreen(
     recetaId: Int,
-    userToken: String, // Ya no opcional - requerido
     onNavigateBack: () -> Unit = {},
     onNavigateToEdit: (Int) -> Unit = {},
     onRecetaDeleted: () -> Unit = {},
-    viewModel: RecetaDetailViewModel = viewModel(factory = RecetaViewModelFactory()) // Usa el factory
+    viewModel: RecetaDetailViewModel = viewModel(factory = RecetaViewModelFactory())
 ) {
     val context = LocalContext.current
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     var showDeleteDialog by remember { mutableStateOf(false) }
 
-    // Cargar receta al iniciar - ya no necesitas verificar null
-    LaunchedEffect(recetaId, userToken) {
-        viewModel.cargarReceta(userToken, recetaId)
+    // Cargar receta al iniciar
+    LaunchedEffect(recetaId) {
+        viewModel.cargarReceta(recetaId)
     }
 
     // Observar eliminación exitosa
@@ -254,7 +253,7 @@ fun RecetaDetailScreen(
                             )
                             Button(
                                 onClick = {
-                                    viewModel.cargarReceta(userToken, recetaId) // Ya no verificas null
+                                    viewModel.cargarReceta(recetaId)
                                 },
                                 colors = ButtonDefaults.buttonColors(
                                     containerColor = PastelLilac
@@ -286,7 +285,7 @@ fun RecetaDetailScreen(
                 TextButton(
                     onClick = {
                         showDeleteDialog = false
-                        viewModel.eliminarReceta(userToken, recetaId) // Ya no verificas null
+                        viewModel.eliminarReceta(recetaId)
                     }
                 ) {
                     Text(

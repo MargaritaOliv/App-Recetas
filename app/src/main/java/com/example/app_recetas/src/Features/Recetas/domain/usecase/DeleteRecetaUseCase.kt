@@ -16,6 +16,6 @@ class DeleteRecetaUseCase(
             return RecetasResult.Error(RecetasError.ValidationError("ID de receta inválido"))
         }
 
-        return repository.eliminarReceta(token, recetaId)
+        return repository.eliminarReceta(recetaId)
     }
 }

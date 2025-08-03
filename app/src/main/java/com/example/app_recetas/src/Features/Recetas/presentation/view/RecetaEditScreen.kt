@@ -31,19 +31,16 @@ import com.example.app_recetas.src.Features.Recetas.presentation.viewModel.Recet
 
 // Colores pastel lila y celeste
 private val PastelLilac = Color(0xFFB39DDB)
-private val PastelBlue = Color(0xFF90CAF9)
 private val SoftPurple = Color(0xFFCE93D8)
-private val FieldBorderPastel = Color(0xFFE1BEE7)
 private val LightLavender = Color(0xFFF3E5F5)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RecetaEditScreen(
     recetaId: Int,
-    userToken: String, // Ya no opcional - requerido
     onNavigateBack: () -> Unit = {},
     onRecetaUpdated: () -> Unit = {},
-    viewModel: RecetaEditViewModel = viewModel(factory = RecetaViewModelFactory()) // Usa el factory
+    viewModel: RecetaEditViewModel = viewModel(factory = RecetaViewModelFactory())
 ) {
     val context = LocalContext.current
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -53,9 +50,9 @@ fun RecetaEditScreen(
     var pasos by remember { mutableStateOf("") }
     var tiempoPreparacion by remember { mutableStateOf("") }
 
-    // Cargar receta al iniciar - ya no necesitas verificar null
-    LaunchedEffect(recetaId, userToken) {
-        viewModel.cargarReceta(userToken, recetaId)
+    // Cargar receta al iniciar
+    LaunchedEffect(recetaId) {
+        viewModel.cargarReceta(recetaId)
     }
 
     // Llenar campos cuando se carga la receta
@@ -180,7 +177,7 @@ fun RecetaEditScreen(
                             verticalArrangement = Arrangement.spacedBy(20.dp)
                         ) {
                             // Nombre de la receta
-                            CustomTextField(
+                            EditCustomTextField(
                                 value = nombre,
                                 onValueChange = { nombre = it },
                                 label = "Nombre de la receta",
@@ -189,7 +186,7 @@ fun RecetaEditScreen(
                             )
 
                             // Ingredientes
-                            CustomTextField(
+                            EditCustomTextField(
                                 value = ingredientes,
                                 onValueChange = { ingredientes = it },
                                 label = "Ingredientes",
@@ -200,7 +197,7 @@ fun RecetaEditScreen(
                             )
 
                             // Pasos
-                            CustomTextField(
+                            EditCustomTextField(
                                 value = pasos,
                                 onValueChange = { pasos = it },
                                 label = "Pasos de preparación",
@@ -211,7 +208,7 @@ fun RecetaEditScreen(
                             )
 
                             // Tiempo de preparación
-                            CustomTextField(
+                            EditCustomTextField(
                                 value = tiempoPreparacion,
                                 onValueChange = { tiempoPreparacion = it },
                                 label = "Tiempo de preparación",
@@ -246,9 +243,7 @@ fun RecetaEditScreen(
                                     val pasosList = pasos.split("\n").filter { it.isNotBlank() }
                                     val tiempo = tiempoPreparacion.toIntOrNull() ?: 0
 
-                                    // Llamar al ViewModel para actualizar la receta - ya no verificas null
                                     viewModel.actualizarReceta(
-                                        token = userToken,
                                         recetaId = recetaId,
                                         nombre = nombre,
                                         ingredientes = ingredientesList,
@@ -308,7 +303,7 @@ fun RecetaEditScreen(
                             )
                             Button(
                                 onClick = {
-                                    viewModel.cargarReceta(userToken, recetaId) // Ya no verificas null
+                                    viewModel.cargarReceta(recetaId)
                                 },
                                 colors = ButtonDefaults.buttonColors(
                                     containerColor = PastelLilac
@@ -326,7 +321,7 @@ fun RecetaEditScreen(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun CustomTextField(
+private fun EditCustomTextField(
     value: String,
     onValueChange: (String) -> Unit,
     label: String,
@@ -362,7 +357,7 @@ private fun CustomTextField(
                 Text(
                     text = label,
                     style = MaterialTheme.typography.labelLarge,
-                    color = Color.Black,
+                    color = PastelLilac,
                     fontWeight = FontWeight.SemiBold
                 )
             }
@@ -383,12 +378,12 @@ private fun CustomTextField(
                 maxLines = if (isMultiline) 6 else 1,
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = PastelLilac,
-                    unfocusedBorderColor = FieldBorderPastel,
+                    unfocusedBorderColor = Color.Gray.copy(alpha = 0.3f),
                     cursorColor = PastelLilac,
                     focusedTextColor = Color.Black,
                     unfocusedTextColor = Color.Black
                 ),
-                trailingIcon = suffix?.let {
+                trailingIcon = if (suffix != null) {
                     {
                         Text(
                             text = suffix,
@@ -397,7 +392,7 @@ private fun CustomTextField(
                             modifier = Modifier.padding(end = 8.dp)
                         )
                     }
-                }
+                } else null
             )
         }
     }

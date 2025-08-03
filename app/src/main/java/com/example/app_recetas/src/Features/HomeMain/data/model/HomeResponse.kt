@@ -12,5 +12,7 @@ data class HomeResponse(
     @SerializedName("pasos")
     val pasos: List<String>,
     @SerializedName("tiempo_preparacion")
-    val tiempoPreparacion: Int
+    val tiempoPreparacion: Int,
+    @SerializedName("imagen_receta")
+    val imagenReceta: String?
 )

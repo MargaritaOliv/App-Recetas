@@ -49,6 +49,6 @@ class UpdateRecetaUseCase(
             tiempoPreparacion = tiempoPreparacion
         )
 
-        return repository.actualizarReceta(token, receta)
+        return repository.actualizarReceta(receta)
     }
 }
